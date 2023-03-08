@@ -13,16 +13,11 @@ val dependencies = Seq(
   "com.lightbend.akka" %% "akka-projection-cassandra" % "1.3.1",
   "com.typesafe.slick" %% "slick" % SlickVersion,
   "org.slf4j" % "slf4j-nop" % "2.0.5",
-  "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion
+  "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion,
+  "com.github.pureconfig" %% "pureconfig" % "0.17.2"
 //  "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
 //  "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion % Test
 )
-lazy val core = (project in file("trading-core"))
-  .settings(
-    name := "trading-core"
-  )
+lazy val core = (project in file("trading-core")).settings(name := "trading-core", libraryDependencies ++= dependencies)
 
-lazy val server = (project in file("trading-api-server"))
-  .settings(
-    name := "trading-api-server"
-  )
+lazy val server = (project in file("trading-api-server")).dependsOn(core).settings(name := "trading-api-server")
