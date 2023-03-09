@@ -1,0 +1,32 @@
+version: "3.3"
+networks:
+  app-tier:
+    driver: bridge
+
+services:
+  cassandra:
+    image: 'cassandra:latest'
+    networks:
+      - app-tier
+    volumes:
+      - ./data/cassandra:/var/lib/cassandra
+    expose:
+      - '9042'
+    ports:
+      - '9042:9042'
+
+  postgres:
+    image: 'postgres:latest'
+    restart: always
+    networks:
+      - app-tier
+    environment:
+      POSTGRES_PASSWORD: "akka-trading-engine-1423"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    expose:
+      - '5432'
+    ports:
+      - '5432:5432'
+# add trading engine docker later
