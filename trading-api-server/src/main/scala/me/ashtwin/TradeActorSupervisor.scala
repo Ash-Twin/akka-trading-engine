@@ -2,7 +2,7 @@ package me.ashtwin
 
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.ClusterSharding
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
 import me.ashtwin.config.ServerConfig
 import me.ashtwin.model.Order.LimitOrder
 import me.ashtwin.model.{ OrderSide, OrderType, TradingPair }
@@ -19,28 +19,45 @@ import scala.util.Random
  */
 
 object TradeActorSupervisor {
-  case class Activate()
+  sealed trait Command
+  case object Activate extends Command
+  case class GetAllTradingMarket(
+    tradeActorRefs: ActorRef[Map[String, EntityRef[TradeActor.Command]]]
+  ) extends Command
 
-  def apply()(implicit sharding: ClusterSharding): Behavior[Activate] =
-    Behaviors.setup[Activate] { ctx =>
-      Behaviors.receiveMessage[Activate] { case Activate() =>
-        ConfigSource.default.load[ServerConfig] match {
-          case Left(err) =>
-            ctx.log.error(err.prettyPrint())
-            ctx.system.terminate()
-          case Right(serverConfig) =>
-            val tradeActorRefs = serverConfig.pairs.map { pair =>
-              val entityRef = sharding.entityRefFor(TradeActor.TypeKey, pair.pairName)
-              entityRef
-            }
-            tradeActorRefs.foreach(
-              _ ! TradeActor.AddOrder(
-                LimitOrder(Random.nextString(8), OrderType.Limit, OrderSide.Buy, 30, 1)
+  def apply(currentTradeActorRefs: Map[String, EntityRef[TradeActor.Command]] = Map.empty)(implicit
+    sharding: ClusterSharding
+  ): Behavior[Command] =
+    Behaviors.receive[Command] { case (ctx, msg) =>
+      msg match {
+        case Activate =>
+          ConfigSource.default.load[ServerConfig] match {
+            case Left(err) =>
+              ctx.log.error(err.prettyPrint())
+              ctx.system.terminate()
+              Behaviors.stopped
+            case Right(serverConfig) =>
+              val tradeActorRefs = serverConfig.pairs.map { pair =>
+                val entityRef = sharding.entityRefFor(TradeActor.TypeKey, pair.pairName)
+                pair.pairName -> entityRef
+              }.toMap
+              tradeActorRefs.values.foreach(
+                _ ! TradeActor.AddOrder(
+                  LimitOrder(
+                    Random.nextString(8),
+                    OrderType.Limit,
+                    OrderSide.Buy,
+                    BigDecimal.apply(Random.nextInt(10)),
+                    1
+                  )
+                )
               )
-            )
+              apply(tradeActorRefs)
+          }
+        case GetAllTradingMarket(tradeActorRefs) =>
+          tradeActorRefs ! currentTradeActorRefs
+          Behaviors.same
 
-        }
-        Behaviors.same
       }
     }
 

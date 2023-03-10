@@ -4,6 +4,7 @@ import akka.Done
 import akka.actor.typed.{ActorSystem, SupervisorStrategy}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
+import akka.cluster.typed.Cluster
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
@@ -26,9 +27,7 @@ object Main {
         })
         ctx.log.info("Trading System Initializing...")
         val tradeSupervisor = ctx.spawn(TradeActorSupervisor.apply(), "TradeSupervisor")
-        tradeSupervisor ! TradeActorSupervisor.Activate()
-        ctx.log.info("\n" + ctx.system.printTree)
-
+        tradeSupervisor ! TradeActorSupervisor.Activate
         Behaviors.same
       },
       "trading-api-server"
@@ -36,5 +35,6 @@ object Main {
     AkkaManagement(system).start()
     // Starting the bootstrap process needs to be done explicitly
     ClusterBootstrap(system).start()
+
   }
 }
