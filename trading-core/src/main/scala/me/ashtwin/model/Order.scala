@@ -26,3 +26,11 @@ sealed trait Order {
   val orderType: String
   val price: BigDecimal
 }
+object OrderType {
+  val Limit  = "Limit"
+  val Market = "Market"
+}
+object OrderSide{
+  val Buy = "Buy"
+  val Sell= "Sell"
+}

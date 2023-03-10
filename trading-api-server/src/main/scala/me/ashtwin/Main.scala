@@ -1,9 +1,11 @@
 package me.ashtwin
 
 import akka.Done
-import akka.actor.typed.{ ActorSystem, SupervisorStrategy }
+import akka.actor.typed.{ActorSystem, SupervisorStrategy}
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
+import akka.management.cluster.bootstrap.ClusterBootstrap
+import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 
 /** @author
@@ -31,6 +33,8 @@ object Main {
       },
       "trading-api-server"
     )
-
+    AkkaManagement(system).start()
+    // Starting the bootstrap process needs to be done explicitly
+    ClusterBootstrap(system).start()
   }
 }
