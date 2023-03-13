@@ -3,6 +3,7 @@ package me.ashtwin
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
+import akka.util.Timeout
 import me.ashtwin.config.ServerConfig
 import me.ashtwin.model.Order.LimitOrder
 import me.ashtwin.model.{ OrderSide, OrderType, TradingPair }
@@ -10,7 +11,9 @@ import pureconfig.ConfigSource
 import pureconfig._
 import pureconfig.generic.auto._
 
-import scala.util.Random
+import java.util.UUID
+import scala.concurrent.ExecutionContextExecutor
+import scala.util.{ Failure, Random, Success }
 
 /** @author
  *    Chenyu Liu
@@ -37,6 +40,8 @@ object TradeActorSupervisor {
               ctx.system.terminate()
               Behaviors.stopped
             case Right(serverConfig) =>
+              implicit val timeout: Timeout             = Timeout.apply(serverConfig.system.timeout)
+              implicit val ec: ExecutionContextExecutor = ctx.executionContext
               val tradeActorRefs = serverConfig.pairs.map { pair =>
                 val entityRef = sharding.entityRefFor(TradeActor.TypeKey, pair.pairName)
                 pair.pairName -> entityRef
@@ -44,13 +49,20 @@ object TradeActorSupervisor {
               tradeActorRefs.values.foreach(
                 _ ! TradeActor.AddOrder(
                   LimitOrder(
-                    Random.nextString(8),
+                    UUID.randomUUID().toString,
                     OrderType.Limit,
                     OrderSide.Buy,
-                    BigDecimal.apply(Random.nextInt(10)),
-                    1
+                    Random.nextInt(10),
+                    Random.nextInt(8)
                   )
                 )
+              )
+              tradeActorRefs.values.foreach(
+                _.ask(TradeActor.CheckOrderBook).onComplete {
+                  case Failure(exception) => throw exception
+                  case Success(orderBook) =>
+                    println(orderBook.orderBook.asksBook.map(_ + "\n").toString())
+                }
               )
               apply(tradeActorRefs)
           }
