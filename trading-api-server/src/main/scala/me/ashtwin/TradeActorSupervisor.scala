@@ -1,19 +1,18 @@
 package me.ashtwin
 
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
+import akka.actor.typed.{ActorRef, Behavior}
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import me.ashtwin.config.ServerConfig
 import me.ashtwin.model.Order.LimitOrder
-import me.ashtwin.model.{ OrderSide, OrderType, TradingPair }
+import me.ashtwin.model.{OrderSide, OrderType}
 import pureconfig.ConfigSource
-import pureconfig._
 import pureconfig.generic.auto._
 
 import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
-import scala.util.{ Failure, Random, Success }
+import scala.util.{Failure, Random, Success}
 
 /** @author
  *    Chenyu Liu

@@ -1,7 +1,7 @@
 package me.ashtwin
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ ActorRef, Behavior }
+import akka.actor.typed.{ ActorRef, BackoffSupervisorStrategy, Behavior }
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior, Recovery, RetentionCriteria }
@@ -25,7 +25,7 @@ object TradeActor {
   case class CheckOrderBook(replyTo: ActorRef[State]) extends Command
   case class State(orderBook: LimitOrderBook)         extends AkkaSerializable
   sealed trait Event                                  extends AkkaSerializable
-  case class OrderAccepted(order: LimitOrder)         extends Event
+  private case class OrderAccepted(order: LimitOrder) extends Event
   case class OrderRejected()                          extends Event
   case class OrderFilled()                            extends Event
   case class OrderReplaced()                          extends Event
@@ -48,7 +48,7 @@ object TradeActor {
       eventSourcingBehavior
     }
 
-  def commandHandler: (State, Command) => Effect[Event, State] = { (state, command) =>
+  private def commandHandler: (State, Command) => Effect[Event, State] = { (state, command) =>
     command match {
       case CheckOrderBook(replyTo) =>
         Effect.reply(replyTo)(state)
@@ -59,7 +59,7 @@ object TradeActor {
     }
   }
 
-  def eventHandler: (State, Event) => State = { (state, event) =>
+  private def eventHandler: (State, Event) => State = { (state, event) =>
     event match {
       case OrderAccepted(order) =>
         (order.orderType, order.side) match {
