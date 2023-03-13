@@ -8,6 +8,8 @@ import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior, Recovery,
 import me.ashtwin.model.Order.LimitOrder
 import me.ashtwin.model.{ LimitOrderBook, Order, OrderSide, OrderType }
 
+import java.time.LocalDateTime
+
 /** @author
  *    Chenyu Liu
  *  @since 3/8/23
@@ -19,19 +21,19 @@ object TradeActor {
   val TypeKey: EntityTypeKey[Command] =
     EntityTypeKey[Command]("TradeActor")
 
-  sealed trait Command                                extends AkkaSerializable
-  case class AddOrder(order: LimitOrder)              extends Command
-  case class CancelOrder(orderId: String)             extends Command
-  case class CheckOrderBook(replyTo: ActorRef[State]) extends Command
-  case class State(orderBook: LimitOrderBook)         extends AkkaSerializable
-  sealed trait Event                                  extends AkkaSerializable
-  private case class OrderAccepted(order: LimitOrder) extends Event
-  case class OrderRejected()                          extends Event
-  case class OrderFilled()                            extends Event
-  case class OrderReplaced()                          extends Event
-  case class OrderReplaceFailed()                     extends Event
-  case class OrderCancelled()                         extends Event
-  case class OrderCancelFailed()                      extends Event
+  sealed trait Command                                             extends AkkaSerializable
+  case class AddOrder(order: LimitOrder, timestamp: LocalDateTime) extends Command
+  case class CancelOrder(orderId: String)                          extends Command
+  case class CheckOrderBook(replyTo: ActorRef[State])              extends Command
+  case class State(orderBook: LimitOrderBook)                      extends AkkaSerializable
+  sealed trait Event                                               extends AkkaSerializable
+  private case class OrderAccepted(order: LimitOrder, timestamp: LocalDateTime) extends Event
+  case class OrderRejected()                                                    extends Event
+  case class OrderFilled()                                                      extends Event
+  case class OrderReplaced()                                                    extends Event
+  case class OrderReplaceFailed()                                               extends Event
+  case class OrderCancelled()                                                   extends Event
+  case class OrderCancelFailed()                                                extends Event
 
   def apply(name: String): Behavior[Command] =
     Behaviors.setup[Command] { context =>
@@ -52,8 +54,8 @@ object TradeActor {
     command match {
       case CheckOrderBook(replyTo) =>
         Effect.reply(replyTo)(state)
-      case AddOrder(order) =>
-        Effect.persist(OrderAccepted(order)).thenNoReply()
+      case AddOrder(order, timestamp) =>
+        Effect.persist(OrderAccepted(order, timestamp)).thenNoReply()
       case _ =>
         Effect.noReply
     }
@@ -61,7 +63,7 @@ object TradeActor {
 
   private def eventHandler: (State, Event) => State = { (state, event) =>
     event match {
-      case OrderAccepted(order) =>
+      case OrderAccepted(order, timestamp) =>
         (order.orderType, order.side) match {
           case (OrderType.Limit, OrderSide.Buy) =>
             state.orderBook.asksBook.addOne(order)

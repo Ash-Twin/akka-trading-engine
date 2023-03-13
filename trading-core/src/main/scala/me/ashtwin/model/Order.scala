@@ -1,5 +1,7 @@
 package me.ashtwin.model
 
+import java.time.LocalDateTime
+
 /** @author
  *    Chenyu Liu
  *  @since 3/8/23
@@ -30,7 +32,7 @@ object OrderType {
   val Limit  = "Limit"
   val Market = "Market"
 }
-object OrderSide{
-  val Buy = "Buy"
-  val Sell= "Sell"
+object OrderSide {
+  val Buy  = "Buy"
+  val Sell = "Sell"
 }
