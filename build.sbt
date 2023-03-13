@@ -22,6 +22,8 @@ val dependencies = Seq(
   "com.typesafe.akka"             %% "akka-discovery"                    % AkkaVersion,
   "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % AkkaManagementVersion,
   "com.typesafe.akka"             %% "akka-serialization-jackson"        % AkkaVersion,
+  "com.typesafe.akka"             %% "akka-stream-kafka"                 % "4.0.0",
+  "com.typesafe.akka"             %% "akka-stream"                       % AkkaVersion,
   "com.typesafe.slick"            %% "slick"                             % SlickVersion,
   "com.typesafe.slick"            %% "slick-hikaricp"                    % SlickVersion,
   "com.github.pureconfig"         %% "pureconfig"                        % "0.17.2",
