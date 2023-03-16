@@ -1,5 +1,6 @@
 package me.ashtwin.config
 
+import com.typesafe.config.Config
 import me.ashtwin.model.TradingPair
 
 import scala.concurrent.duration.FiniteDuration
@@ -12,8 +13,9 @@ import scala.concurrent.duration.FiniteDuration
 
 case class ServerConfig(
   pairs: List[TradingPair],
-  system: SystemConfig
+  system: SystemConfig,
 )
 case class SystemConfig(
   timeout: FiniteDuration
 )
+
