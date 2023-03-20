@@ -21,12 +21,12 @@ object TradeActor {
   val TypeKey: EntityTypeKey[Command] =
     EntityTypeKey[Command]("TradeActor")
 
-  sealed trait Command                                             extends AkkaSerializable
-  case class AddOrder(order: LimitOrder, timestamp: LocalDateTime) extends Command
-  case class CancelOrder(orderId: String)                          extends Command
-  case class CheckOrderBook(replyTo: ActorRef[State])              extends Command
-  case class State(orderBook: LimitOrderBook)                      extends AkkaSerializable
-  sealed trait Event                                               extends AkkaSerializable
+  sealed trait Command                                               extends AkkaSerializable
+  case class AddOrder(order: LimitOrder, timestamp: LocalDateTime)   extends Command
+  case class CancelOrder(orderId: String, replyTo: ActorRef[String]) extends Command
+  case class CheckOrderBook(replyTo: ActorRef[State])                extends Command
+  case class State(orderBook: LimitOrderBook)                        extends AkkaSerializable
+  sealed trait Event                                                 extends AkkaSerializable
   private case class OrderAccepted(order: LimitOrder, timestamp: LocalDateTime) extends Event
   case class OrderRejected()                                                    extends Event
   case class OrderFilled()                                                      extends Event
@@ -56,6 +56,8 @@ object TradeActor {
         Effect.reply(replyTo)(state)
       case AddOrder(order, timestamp) =>
         Effect.persist(OrderAccepted(order, timestamp)).thenNoReply()
+      case CancelOrder(orderId, replyTo) =>
+        Effect.persist(OrderCancelled()).thenReply(replyTo)(_ => orderId)
       case _ =>
         Effect.noReply
     }
@@ -63,7 +65,7 @@ object TradeActor {
 
   private def eventHandler: (State, Event) => State = { (state, event) =>
     event match {
-      case OrderAccepted(order, timestamp) =>
+      case OrderAccepted(order, _) =>
         (order.orderType, order.side) match {
           case (OrderType.Limit, OrderSide.Buy) =>
             state.orderBook.asksBook.addOne(order)
@@ -71,6 +73,8 @@ object TradeActor {
           case _ =>
             state
         }
+      case OrderCancelled() =>
+        state
       case _ => state
 //      case OrderRejected() => ???
 //      case OrderFilled() => ???
