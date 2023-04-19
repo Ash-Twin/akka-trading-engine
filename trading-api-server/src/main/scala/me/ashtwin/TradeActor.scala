@@ -75,8 +75,8 @@ object TradeActor {
         }
       case OrderCancelled() =>
         state
-      case _ => state
-//      case OrderRejected() => ???
+      case _               => state
+      case OrderRejected() => ???
 //      case OrderFilled() => ???
 //      case OrderReplaced() => ???
 //      case OrderReplaceFailed() => ???
